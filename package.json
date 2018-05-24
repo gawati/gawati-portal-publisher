@@ -11,7 +11,9 @@
     "amqplib": "^0.5.2",
     "archiver": "^2.1.1",
     "axios": "0.18.0",
+    "extract-zip": "^1.6.7",
     "fs-extra": "^6.0.1",
+    "mkdirp": "^0.5.1",
     "path": "^0.12.7"
   }
 }
