@@ -1,0 +1,17 @@
+{
+  "name": "gawati-portal-publisher",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node index.js",
+    "build": "",
+    "vars": "env | grep npm_package_ | grep -v npm_lifecycle_script"
+  },
+  "dependencies": {
+    "amqplib": "^0.5.2",
+    "archiver": "^2.1.1",
+    "axios": "0.18.0",
+    "fs-extra": "^6.0.1",
+    "path": "^0.12.7"
+  }
+}
