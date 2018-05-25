@@ -8,6 +8,9 @@ const qh = require("./utils/QueueHelper");
 const uh = require("./utils/UriHelper");
 const sh = require("./utils/ServiceHelper");
 
+/**
+ * Extract a zip folder
+ */
 const unzip = (src, dest) => {
   return new Promise(function(resolve, reject) {
     extract(src, {dir: dest}, function(err) {
@@ -58,14 +61,12 @@ const toGawatiData = (zipObj) => {
   const docName = uh.fileNameFromIRI(iri, "xml");
   const docPath = path.join(constants.TMP_AKN_FOLDER(), targetName, docName);
 
-  //Extract zip
   unzip(src, path.resolve(dest))
   .then((res) => {
     console.log("Extracted to ", targetName);
     return readFile(docPath);
   })
   .then((data) => {
-    //To-Do: Extract <an:akomaNtoso> section
     xmlPackage = {
       "fileXml": docName,
       "iri": iri,
@@ -74,12 +75,13 @@ const toGawatiData = (zipObj) => {
     return syncPkg(xmlPackage);
   })
   .then((res) => {
-    console.log(res.data); //To-Do: Check code for errors
-    //Publish on STATUS_Q
-    qh.publishStatus(qh.formMsg(iri, 'published', 'Published on Gawati-Data'));
+    console.log(res.data);
+    res.data.success
+    ? qh.publishStatus(qh.formMsg(iri,'published','Published on Gawati-Data'));
+    : qh.publishStatus(qh.formMsg(iri,'failed','Error on Portal Publisher'));
   })
   .catch((err) => {
-    qh.publishStatus(qh.formMsg(iri, 'failed', 'Error on Portal Publisher'));
+    qh.publishStatus(qh.formMsg(iri,'failed','Error on Portal Publisher'));
     console.log(err);
   });
 };
