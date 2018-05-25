@@ -77,7 +77,7 @@ const toGawatiData = (zipObj) => {
   .then((res) => {
     console.log(res.data);
     res.data.success
-    ? qh.publishStatus(qh.formMsg(iri,'published','Published on Gawati-Data'));
+    ? qh.publishStatus(qh.formMsg(iri,'published','Published on Gawati-Data'))
     : qh.publishStatus(qh.formMsg(iri,'failed','Error on Portal Publisher'));
   })
   .catch((err) => {
