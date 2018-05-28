@@ -59,7 +59,10 @@ const toGawatiData = (zipObj) => {
 
   //XML doc name and path
   const docName = uh.fileNameFromIRI(iri, "xml");
-  const docPath = path.join(constants.TMP_AKN_FOLDER(), targetName, docName);
+
+  //Use resolve to avoid repeated paths in windows.
+  const docPath = path.resolve(constants.TMP_AKN_FOLDER(), targetName, docName);
+  console.log(" docPath: ", docPath);
 
   unzip(src, path.resolve(dest))
   .then((res) => {
