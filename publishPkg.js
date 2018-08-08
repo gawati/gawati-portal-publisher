@@ -23,9 +23,9 @@ const unzip = (src, dest) => {
 /**
  * Reads a given file to string.
  */
-const readFile = (filename) => {
+const readFile = (filename, encoding="utf8") => {
   return new Promise(function(resolve, reject) {
-    fs.readFile(filename, "utf8", function(err, data) {
+    fs.readFile(filename, encoding, function(err, data) {
       if (err) reject(err);
       else resolve(data);
     });
@@ -35,14 +35,14 @@ const readFile = (filename) => {
 /**
  * Syncs doc with gawati-data
  */
-const syncPkg = (xmlPackage) => {
+const syncPkg = (publishPkg) => {
   console.log(" IN: syncPkg");
   const syncPkgApi = sh.getApi("xmlServer", "syncPkg");
   const {url, method} = syncPkgApi;
   return axios({
       method: method,
       url: url,
-      data: xmlPackage
+      data: publishPkg
   })
 }
 
@@ -59,23 +59,25 @@ const toGawatiData = (zipObj) => {
 
   //XML doc name and path
   const docName = uh.fileNameFromIRI(iri, "xml");
+  const keyName = uh.fileNameFromIRI(iri, "public");
 
   //Use resolve to avoid repeated paths in windows.
   const docPath = path.resolve(constants.TMP_AKN_FOLDER(), targetName, docName);
+  const keyPath = path.resolve(constants.TMP_AKN_FOLDER(), targetName, keyName);
   console.log(" docPath: ", docPath);
 
   unzip(src, path.resolve(dest))
   .then((res) => {
     console.log("Extracted to ", targetName);
-    return readFile(docPath);
+    return Promise.all([readFile(docPath), readFile(keyPath, "base64")])
   })
-  .then((data) => {
-    xmlPackage = {
-      "fileXml": docName,
+  .then(function ([docData, keyData]) {
+    let publishPkg = {
+      "key": keyData,
       "iri": iri,
-      "data": data
+      "doc": docData
     };
-    return syncPkg(xmlPackage);
+    return syncPkg(publishPkg);
   })
   .then((res) => {
     console.log(res.data);
