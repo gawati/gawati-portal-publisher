@@ -3,7 +3,7 @@
         "serviceEndPoint" : "http://localhost:8080/exist/restxq",
         "api": {
             "syncPkg": {
-                "url": "/gw/doc/sync",
+                "url": "/gw/doc/sync/json",
                 "method": "post"
             }
         }
