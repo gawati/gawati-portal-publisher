@@ -5,6 +5,10 @@
             "syncPkg": {
                 "url": "/gw/doc/sync/json",
                 "method": "post"
+            },
+            "deletePkg": {
+                "url": "/gw/doc/delete/json",
+                "method": "post"
             }
         }
     }
