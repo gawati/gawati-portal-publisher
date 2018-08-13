@@ -33,6 +33,21 @@ const readFile = (filename, encoding="utf8") => {
 }
 
 /**
+ * Check if file exists
+ */
+const fileExists = (path) => {
+  return new Promise(function(resolve, reject) {
+    fs.access(path, fs.constants.R_OK, function(err) {
+      if (err) {
+        err.code === 'ENOENT' ? resolve(false) : reject(err);
+      } else {
+        resolve(true)
+      }
+    })
+  });
+}
+
+/**
  * Syncs doc with gawati-data
  */
 const syncPkg = (publishPkg) => {
@@ -65,17 +80,24 @@ const toGawatiData = (zipObj) => {
   const docPath = path.resolve(constants.TMP_AKN_FOLDER(), targetName, docName);
   const keyPath = path.resolve(constants.TMP_AKN_FOLDER(), targetName, keyName);
   console.log(" docPath: ", docPath);
+  let keyExists = false;
 
   unzip(src, path.resolve(dest))
-  .then((res) => {
+  .then(res => {
     console.log("Extracted to ", targetName);
-    return Promise.all([readFile(docPath), readFile(keyPath, "base64")])
+    return fileExists(keyPath)
   })
-  .then(function ([docData, keyData]) {
+  .then(res => {
+    keyExists = res; 
+    return keyExists 
+      ? Promise.all([readFile(docPath), readFile(keyPath, "base64")])
+      : readFile(docPath)
+  })
+  .then(data => {
     let publishPkg = {
-      "key": keyData,
+      "key": keyExists ? data[1] : '',
       "iri": iri,
-      "doc": docData
+      "doc": keyExists ? data[0] : data
     };
     return syncPkg(publishPkg);
   })
