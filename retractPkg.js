@@ -2,6 +2,8 @@ const axios = require("axios");
 const qh = require("./utils/QueueHelper");
 const sh = require("./utils/ServiceHelper");
 
+const ACTION = 'retract';
+
 /**
  * Delete package for IRI from gawati-data.
  * Publish status of pkg deleted by the gawati-data.
@@ -20,11 +22,11 @@ const toGawatiData = ({iri, action}) => {
   .then((res) => {
     console.log(res.data);
     res.data.success
-    ? qh.publishStatus(qh.formMsg(iri,'retracted','Retracted from Gawati-Data'))
-    : qh.publishStatus(qh.formMsg(iri,'failed','Error on Portal Publisher'));
+    ? qh.publishStatus(qh.formMsg(iri,'retracted','Retracted from Gawati-Data', ACTION))
+    : qh.publishStatus(qh.formMsg(iri,'failed','Error on Portal Publisher', ACTION));
   })
   .catch((err) => {
-    qh.publishStatus(qh.formMsg(iri,'failed','Error on Portal Publisher'));
+    qh.publishStatus(qh.formMsg(iri,'failed','Error on Portal Publisher', ACTION));
     console.log(err);
   });
 };
