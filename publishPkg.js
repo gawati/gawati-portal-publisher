@@ -1,12 +1,13 @@
 const axios = require("axios");
 const path = require("path");
 const extract = require("extract-zip");
-const mkdirp = require("mkdirp");
-const fs = require("fs-extra");
 const constants = require("./constants");
 const qh = require("./utils/QueueHelper");
 const uh = require("./utils/UriHelper");
 const sh = require("./utils/ServiceHelper");
+const fh = require("./utils/FileHelper");
+
+const ACTION = 'publish';
 
 /**
  * Extract a zip folder
@@ -16,33 +17,6 @@ const unzip = (src, dest) => {
     extract(src, {dir: dest}, function(err) {
       if (err) reject(err);
       else resolve(true);
-    })
-  });
-}
-
-/**
- * Reads a given file to string.
- */
-const readFile = (filename, encoding="utf8") => {
-  return new Promise(function(resolve, reject) {
-    fs.readFile(filename, encoding, function(err, data) {
-      if (err) reject(err);
-      else resolve(data);
-    });
-  });
-}
-
-/**
- * Check if file exists
- */
-const fileExists = (path) => {
-  return new Promise(function(resolve, reject) {
-    fs.access(path, fs.constants.R_OK, function(err) {
-      if (err) {
-        err.code === 'ENOENT' ? resolve(false) : reject(err);
-      } else {
-        resolve(true)
-      }
     })
   });
 }
@@ -59,6 +33,37 @@ const syncPkg = (publishPkg) => {
       url: url,
       data: publishPkg
   })
+}
+
+/**
+ * Get src and dest paths for attachments
+ */
+const getAttPathStruct = (iri, unzippedTmpDir) => {
+  let arrIri = iri.split("/");
+  let subPath = arrIri.slice(1, arrIri.length - 1 ).join("/");
+  let attSrc = path.join(constants.TMP_AKN_FOLDER(), unzippedTmpDir, subPath);
+  let attDest = path.join(constants.AKN_ATT_FOLDER(), subPath);
+  return {attSrc, attDest};
+}
+
+/**
+ * Save attachments (if present) to the filesystem
+ */
+const saveAtt = (attSrc, attDest) => {
+  return new Promise(function(resolve, reject) {
+    fh.fileExists(attSrc)
+    .then(res => {
+      if (res) {
+        fh.mkdir(attDest)
+        .then(res => fh.copyFiles(attSrc, attDest))
+        .then(res => resolve(true))
+        .catch(err => reject(err))
+      } else {
+        resolve(true)
+      }
+    })
+    .catch(err => reject(err))
+  });
 }
 
 /**
@@ -82,22 +87,25 @@ const toGawatiData = (zipObj) => {
   console.log(" docPath: ", docPath);
   let keyExists = false;
 
+  //Attachments paths
+  const {attSrc, attDest} = getAttPathStruct(iri, targetName);
+
   unzip(src, path.resolve(dest))
   .then(res => {
     console.log("Extracted to ", targetName);
-    return fileExists(keyPath)
+    return fh.fileExists(keyPath)
   })
   .then(res => {
     keyExists = res; 
     return keyExists 
-      ? Promise.all([readFile(docPath), readFile(keyPath, "base64")])
-      : readFile(docPath)
+      ? Promise.all([fh.readFile(docPath), fh.readFile(keyPath, "base64"), saveAtt(attSrc, attDest)])
+      : Promise.all([fh.readFile(docPath), saveAtt(attSrc, attDest)])
   })
   .then(data => {
     let publishPkg = {
       "key": keyExists ? data[1] : '',
       "iri": iri,
-      "doc": keyExists ? data[0] : data
+      "doc": data[0]
     };
     return syncPkg(publishPkg);
   })
