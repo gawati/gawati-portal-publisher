@@ -1,5 +1,6 @@
 const amqp = require('amqplib/callback_api');
 const publish = require('./publishPkg');
+const retract = require('./retractPkg');
 
 /**
  * Important: mqConfig channels get set in the async calls.
@@ -12,6 +13,10 @@ let mqConfig = {
   },
   "STATUS_Q": {
     "key": "statusQ",
+    "channel": {}
+  },
+  "IRI_Q": {
+    "key": "iriQ",
     "channel": {}
   }
 }
@@ -38,7 +43,7 @@ function getQKey(qName) {
 }
  
 // Publisher
-function publisherZipQ(conn) {
+function publisherStatusQ(conn) {
   const qName = 'STATUS_Q';
   const ex = getExchange();
   const key = getQKey(qName);
@@ -58,8 +63,8 @@ function publisherZipQ(conn) {
   }
 }
  
-// Consumer
-function consumerStatusQ(conn) {
+// Consumer for zipped pkgs to be published
+function consumerZipQ(conn) {
   const qName = 'ZIP_Q';
   const ex = getExchange();
   const key = getQKey(qName);
@@ -83,12 +88,35 @@ function consumerStatusQ(conn) {
     });
   }
 }
+
+// Consumer for IRIs to be retracted
+function consumerIriQ(conn) {
+  const qName = 'IRI_Q';
+  const ex = getExchange();
+  const key = getQKey(qName);
+
+  conn.createChannel(onOpen);
+  function onOpen(err, channel) {
+    if (err != null) bail(err);
+    channel.assertExchange(ex, 'direct', {durable: true});
+    channel.assertQueue('portal_iri_q', {exclusive: false, durable: true}, function(err, q) {
+      console.log(" %s consumer channel opened.", qName);
+      console.log(' [*] Waiting for messages. To exit press CTRL+C');
+      channel.bindQueue(q.queue, ex, key);
+      channel.consume(q.queue, function(msg) {
+        console.log(" [x] %s: '%s'", msg.fields.routingKey, msg.content.toString());
+        retract.toGawatiData(JSON.parse(msg.content.toString()));
+      }, {noAck: true});
+    });
+  }
+}
  
 const rabbit = amqp.connect('amqp://localhost', function(err, conn) {
   console.log(" AMQP CONNECTED");
   if (err != null) bail(err);
-  consumerStatusQ(conn);
-  publisherZipQ(conn);
+  consumerZipQ(conn);
+  consumerIriQ(conn);
+  publisherStatusQ(conn);
 });
 
 module.exports = {

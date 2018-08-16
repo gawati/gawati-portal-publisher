@@ -1,7 +1,14 @@
 # Portal Publisher Component for Gawati Publishing
 - Reads the zip package path from ZIP_Q
 - Extracts the zip folder
-- Syncs docs with Portal DB (gawati-data)
+- Saves attachments associated with the iri on the filesystem
+- Syncs document with Portal DB (gawati-data)
+- Writes updated status on STATUS_Q 
+
+# Portal Publisher Component for Gawati Retraction
+- Reads the iri from IRI_Q
+- Deletes attachments associated with the iri from the filesystem
+- Purges document from Portal DB (gawati-data)
 - Writes updated status on STATUS_Q 
 
 ### Setup
