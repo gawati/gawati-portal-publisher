@@ -14,7 +14,7 @@
 ### Setup
 1. Clone the repo
     ```
-    git clone git@gitlab.com:bungenicom/gawati/gawati-portal-publisher.git
+    git clone https://github.com/gawati/gawati-portal-publisher.git
     ```
 2. Install packages
     ```
